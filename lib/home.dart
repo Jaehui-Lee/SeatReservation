@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'roomit4.dart';
 
 class Home extends StatefulWidget {
+  String? _id;
+
+  Home(this._id);
   @override
   _HomeState createState() => _HomeState();
 }
@@ -34,8 +37,8 @@ class _HomeState extends State<Home> {
                       fontWeight: FontWeight.bold),
                 ),
                 onPressed: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (context) => RoomIT4()));
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => RoomIT4(widget._id)));
                 },
               ),
             )

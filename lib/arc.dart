@@ -6,13 +6,14 @@ import 'IT4/it4-108.dart';
 import 'mypainter.dart';
 
 class Arc extends StatelessWidget {
+  String? _id;
   String roomNumber = "";
   int? reserved;
   int? total;
   double percentage = 0.0;
   late AnimationController percentageAnimationController;
 
-  Arc(this.roomNumber, this.reserved, this.total, this.percentage);
+  Arc(this._id, this.roomNumber, this.reserved, this.total, this.percentage);
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -49,8 +50,8 @@ class Arc extends StatelessWidget {
                   ],
                 ),
                 onPressed: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (context) => IT4_108()));
+                  Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => IT4_108(_id)));
                 }),
           ),
         ),

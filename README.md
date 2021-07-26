@@ -1,6 +1,6 @@
-# seat_reservation
+# SeatReservation
 
-A new Flutter project.
+Seat reservation on specific room in univ.
 
 ## Getting Started
 

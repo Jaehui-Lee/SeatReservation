@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'home.dart';
@@ -9,12 +10,25 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  String _email = '';
+  String _id = '';
   String _password = '';
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLogin = false;
-  late final String documentId;
+  CollectionReference users = FirebaseFirestore.instance.collection('users');
+
+  Future<void> login(context) async {
+    return await users.doc(_id).get().then((DocumentSnapshot doc) {
+      if (doc.data() != null) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => Home(_id)));
+        _isLogin = true;
+      } else {
+        print("Faile to Login");
+      }
+    }).catchError((error) => print("Failed to Login"));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +78,7 @@ class _LoginState extends State<Login> {
                 ),
                 onChanged: (value) {
                   setState(() {
-                    _email = value;
+                    _id = value;
                   });
                 },
               ),
@@ -100,11 +114,7 @@ class _LoginState extends State<Login> {
                       ),
                       side: const BorderSide(color: Colors.transparent)),
                   onPressed: () {
-                    if ((_email == 'jaehui') && (_password == '1234')) {
-                      _isLogin = true;
-                      Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => Home()));
-                    }
+                    login(context);
                     if (!_isLogin) {
                       print('failure');
                     }
