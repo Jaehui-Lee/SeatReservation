@@ -16,14 +16,20 @@ class _IT4_108State extends State<IT4_108> {
       .collection('rooms')
       .doc('it4-108')
       .collection('seats');
-  List<Seat> seats = List.filled(40, Seat(-1, -1, "", "", "", ""));
+  List<Seat> seats = List.filled(40, Seat("", -1, -1, "", "", "", ""));
 
   Future<void> updateSeats() async {
     return await fseats.get().then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        seats[data['number']] = Seat(data['number'], data['state'], data['id'],
-            data['startTime'], data['endTime'], widget._id);
+        seats[data['seatNumber']] = Seat(
+            'it4-108',
+            data['seatNumber'],
+            data['state'],
+            data['id'],
+            data['startTime'],
+            data['endTime'],
+            widget._id);
       });
     });
   }
@@ -35,7 +41,7 @@ class _IT4_108State extends State<IT4_108> {
   //       .collection('seats');
   //   for (int i = 2; i <= 39; i++) {
   //     seats.doc('seat$i').set({
-  //       "number": i,
+  //       "seatNumber": i,
   //       "state": 0,
   //       "id": "",
   //       "startTime": "",
@@ -53,7 +59,7 @@ class _IT4_108State extends State<IT4_108> {
           if (snapshot.connectionState == ConnectionState.done) {
             fseats.get().then((value) {
               // value.docs.forEach((element) {
-              //   print(element.data()['number']);
+              //   print(element.data()['seatNumber']);
               //   print(element.data()['state']);
               //   print(element.data()['id']);
               //   print(element.data()['startTime']);
@@ -161,13 +167,13 @@ class _IT4_108State extends State<IT4_108> {
             Row(
               // Row1 seats
               children: [
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[1],
                 seats[2],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[3],
                 seats[4],
                 seats[5],
@@ -181,11 +187,11 @@ class _IT4_108State extends State<IT4_108> {
               children: [
                 seats[6],
                 seats[7],
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[8],
                 seats[9],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[10],
                 seats[11],
                 seats[12],
@@ -200,10 +206,10 @@ class _IT4_108State extends State<IT4_108> {
                 seats[13],
                 seats[14],
                 seats[15],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[16],
                 seats[17],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[18],
                 seats[19],
                 seats[20],
@@ -215,13 +221,13 @@ class _IT4_108State extends State<IT4_108> {
             Row(
               // Row4 seats
               children: [
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[21],
                 seats[22],
                 seats[23],
@@ -236,10 +242,10 @@ class _IT4_108State extends State<IT4_108> {
                 seats[24],
                 seats[25],
                 seats[26],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[27],
                 seats[28],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[29],
                 seats[30],
                 seats[31],
@@ -254,10 +260,10 @@ class _IT4_108State extends State<IT4_108> {
                 seats[32],
                 seats[33],
                 seats[34],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[35],
                 seats[36],
-                Seat(-1, -1, "", "", "", ""),
+                Seat('it4-108', -1, -1, "", "", "", ""),
                 seats[37],
                 seats[38],
                 seats[39],

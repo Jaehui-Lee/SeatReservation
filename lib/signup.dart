@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import 'addUser.dart';
-
 class SignUp extends StatefulWidget {
   @override
   State<SignUp> createState() => _SignUpState();
@@ -19,23 +17,30 @@ class _SignUpState extends State<SignUp> {
   CollectionReference users = FirebaseFirestore.instance.collection('users');
   var count;
 
-  Future<void> updateCount() {
-    return users
+  Future<void> updateCount() async {
+    return await users
         .doc('information')
-        .update({'count': count})
+        .update({'userCount': count})
         .then((value) => print("Count Updated"))
         .catchError((error) => print("Failed to update user: $error"));
   }
 
-  Future<void> addUser() {
-    return users.doc(_id).set({
+  Future<void> updateUserHistory() async {
+    return await users.doc(_id).collection('history').doc('information').set({
+      'historyCount': 0, // using-history count
+    });
+  }
+
+  Future<void> addUser() async {
+    return await users.doc(_id).set({
       'id': _id, // John Doe
       'password': _password, // Stokes and Sons
       'currentUsingSeat': "",
     }).then((value) {
       print('Add User');
       updateCount();
-    }).catchError((error) => print("Failed to add user: $error"));
+      updateUserHistory();
+    });
   }
 
   @override
@@ -132,7 +137,7 @@ class _SignUpState extends State<SignUp> {
                             .get()
                             .then((DocumentSnapshot ds) {
                           count = ds.data();
-                          count = count['count'] + 1;
+                          count = count['userCount'] + 1;
                         });
                         addUser();
                         Navigator.pop(context);

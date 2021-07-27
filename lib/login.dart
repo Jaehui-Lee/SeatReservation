@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'home.dart';
 import 'signup.dart';
@@ -14,21 +15,11 @@ class _LoginState extends State<Login> {
   String _password = '';
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLogin = false;
+  bool _isAllWritten = false;
+  bool _isIdWritten = false;
+  bool _isPasswordWritten = false;
+  // bool _isLogin = false;
   CollectionReference users = FirebaseFirestore.instance.collection('users');
-
-  Future<void> login(context) async {
-    return await users.doc(_id).get().then((DocumentSnapshot doc) {
-      if (doc.data() != null) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        Navigator.of(context)
-            .push(MaterialPageRoute(builder: (context) => Home(_id)));
-        _isLogin = true;
-      } else {
-        print("Faile to Login");
-      }
-    }).catchError((error) => print("Failed to Login"));
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +70,9 @@ class _LoginState extends State<Login> {
                 onChanged: (value) {
                   setState(() {
                     _id = value;
+                    _isIdWritten = value == '' ? false : true;
+                    _isAllWritten =
+                        (_isIdWritten && _isPasswordWritten) ? true : false;
                   });
                 },
               ),
@@ -97,6 +91,9 @@ class _LoginState extends State<Login> {
                 onChanged: (value) {
                   setState(() {
                     _password = value;
+                    _isPasswordWritten = value == '' ? false : true;
+                    _isAllWritten =
+                        (_isIdWritten && _isPasswordWritten) ? true : false;
                   });
                 },
               ),
@@ -113,12 +110,13 @@ class _LoginState extends State<Login> {
                         borderRadius: BorderRadius.all(Radius.circular(8.0)),
                       ),
                       side: const BorderSide(color: Colors.transparent)),
-                  onPressed: () {
-                    login(context);
-                    if (!_isLogin) {
-                      print('failure');
-                    }
-                  },
+                  onPressed: !_isAllWritten
+                      ? () {
+                          _showToast("아이디와 비밀번호를 입력해주세요");
+                        }
+                      : () {
+                          login(context);
+                        },
                   child: const Text(
                     '로그인',
                     style: TextStyle(color: Colors.white),
@@ -153,5 +151,29 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
+  }
+
+  Future<void> login(context) async {
+    return await users.doc(_id).get().then((DocumentSnapshot doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      if (data['id'] == _id && data['password'] == _password) {
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => Home(_id)));
+        // _isLogin = true;
+      } else {
+        _showToast("아이디와 비밀번호를 다시 확인해주세요");
+      }
+    });
+  }
+
+  void _showToast(String _msg) {
+    Fluttertoast.showToast(
+        msg: _msg,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0);
   }
 }

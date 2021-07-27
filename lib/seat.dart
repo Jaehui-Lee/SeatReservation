@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class Seat extends StatefulWidget {
+  String? room;
   int? seatNumber;
   int? state;
   String? id;
@@ -9,18 +11,16 @@ class Seat extends StatefulWidget {
   String? endTime;
   String? name; // user name
 
-  Seat(this.seatNumber, this.state, this.id, this.startTime, this.endTime,
-      this.name);
+  Seat(this.room, this.seatNumber, this.state, this.id, this.startTime,
+      this.endTime, this.name);
 
   @override
   State<Seat> createState() => _SeatState();
 }
 
 class _SeatState extends State<Seat> {
-  CollectionReference<Map<String, dynamic>> fseats = FirebaseFirestore.instance
-      .collection('rooms')
-      .doc('it4-108')
-      .collection('seats');
+  CollectionReference<Map<String, dynamic>> fseats =
+      FirebaseFirestore.instance.collection('rooms');
   CollectionReference users = FirebaseFirestore.instance.collection('users');
   @override
   Widget build(BuildContext context) {
@@ -160,6 +160,7 @@ class _SeatState extends State<Seat> {
                           .toString()
                           .substring(0, eTime.toString().indexOf('.')),
                       0);
+                  _showToast('예약 완료되었습니다');
                 });
                 Navigator.pop(context);
               },
@@ -183,7 +184,7 @@ class _SeatState extends State<Seat> {
         builder: (BuildContext context) {
           // return object of type Dialog
           return AlertDialog(
-            content: const Text("종료 하시겠습니까?"),
+            content: const Text("사용 종료 하시겠습니까?"),
             actions: [
               TextButton(
                 child: const Text("확인"),
@@ -194,6 +195,7 @@ class _SeatState extends State<Seat> {
                     widget.startTime = "";
                     widget.endTime = "";
                     updateSeat(0, "", "", "", 1);
+                    _showToast('사용 종료 되었습니다');
                   });
                   //print(Timestamp.now().toDate());
                   Navigator.pop(context);
@@ -214,7 +216,11 @@ class _SeatState extends State<Seat> {
 
   Future<void> updateSeat(int _state, String _id, String _startTime,
       String _endTime, int mode) async {
-    return await fseats.doc('seat${widget.seatNumber}').update({
+    return await fseats
+        .doc(widget.room)
+        .collection('seats')
+        .doc('seat${widget.seatNumber}')
+        .update({
       'state': _state,
       'id': _id,
       'startTime': _startTime,
@@ -223,11 +229,45 @@ class _SeatState extends State<Seat> {
       updateUser(mode);
       await FirebaseFirestore.instance
           .collection('rooms')
-          .doc('it4-108')
+          .doc(widget.room)
           .get()
-          .then((DocumentSnapshot ds) {
+          .then((DocumentSnapshot ds) async {
         var v = ds.data() as Map<String, dynamic>;
         updateReserved(mode, v['reserved']);
+        await users
+            .doc(widget.name)
+            .collection('history')
+            .doc('information')
+            .get()
+            .then((value) async {
+          int userHistoryCount = value['count'];
+          if (mode == 0) {
+            userHistoryCount++;
+          }
+          String temp = Timestamp.now().toDate().toString();
+          updateUserHistory(
+            mode,
+            userHistoryCount,
+            _startTime,
+            temp.substring(0, temp.indexOf('.')),
+          );
+          await fseats
+              .doc(widget.room)
+              .collection('history')
+              .doc(_startTime.substring(0, 7))
+              .collection(_startTime.substring(0, 10))
+              .doc('information')
+              .get()
+              .then((value) {
+            int roomHistoryCount = value['count'];
+            if (mode == 0) {
+              roomHistoryCount++;
+            }
+            //updateRoomHistory(mode, roomHistoryCount, _startTime, temp.substring(0, temp.indexOf('.')));
+          });
+        });
+
+        // updateRoomHistory(mode);
       });
     });
   }
@@ -251,17 +291,71 @@ class _SeatState extends State<Seat> {
       // 사용
       return await FirebaseFirestore.instance
           .collection('rooms')
-          .doc('it4-108')
+          .doc(widget.room)
           .update({
         'reserved': reserved + 1,
       });
     } else {
+      // 사용 취소
       return await FirebaseFirestore.instance
           .collection('rooms')
-          .doc('it4-108')
+          .doc(widget.room)
           .update({
         'reserved': reserved - 1,
       });
     }
+  }
+
+  Future<void> updateUserHistory(
+      int mode, int userHistoryCount, String startTime, String endTime) async {
+    if (mode == 0) {
+      // 사용
+      return await users
+          .doc(widget.name)
+          .collection('history')
+          .doc(userHistoryCount.toString())
+          .set({
+        'room': widget.room,
+        'seatNumber': widget.seatNumber,
+        'startTime': startTime,
+      }).then((value) async {
+        await users
+            .doc(widget.name)
+            .collection('history')
+            .doc('information')
+            .update({
+          'count': userHistoryCount,
+        });
+      });
+    } else {
+      // 사용 취소
+      return await users
+          .doc(widget.name)
+          .collection('history')
+          .doc(userHistoryCount.toString())
+          .update({
+        'endTime': endTime,
+      });
+    }
+  }
+
+  // Future<void> updateRoomHistory(int mode, int roomHistoryCount, String startTime, String endTime) async{
+  //   if ( mode == 0 ){ // 사용
+  //     return await fseats.doc(widget.room).collection('history').doc()
+  //   }else{
+  //     // 사용 취소
+  //     return await
+  //   }
+  // }
+
+  void _showToast(String _msg) {
+    Fluttertoast.showToast(
+        msg: _msg,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0);
   }
 }
