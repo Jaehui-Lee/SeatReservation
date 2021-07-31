@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class Seat extends StatefulWidget {
+  String? building;
   String? room;
   int? seatNumber;
   int? state;
@@ -11,17 +12,18 @@ class Seat extends StatefulWidget {
   String? endTime;
   String? name; // user name
 
-  Seat(this.room, this.seatNumber, this.state, this.id, this.startTime,
-      this.endTime, this.name);
+  Seat(this.building, this.room, this.seatNumber, this.state, this.id,
+      this.startTime, this.endTime, this.name);
 
   @override
   State<Seat> createState() => _SeatState();
 }
 
 class _SeatState extends State<Seat> {
-  CollectionReference<Map<String, dynamic>> fseats =
-      FirebaseFirestore.instance.collection('rooms');
+  CollectionReference rooms = FirebaseFirestore.instance.collection('rooms');
   CollectionReference users = FirebaseFirestore.instance.collection('users');
+  CollectionReference history =
+      FirebaseFirestore.instance.collection('history');
   @override
   Widget build(BuildContext context) {
     // no seat
@@ -113,7 +115,7 @@ class _SeatState extends State<Seat> {
   Future<void> getCurrentUsingSeat(context) async {
     return await users.doc(widget.name).get().then((DocumentSnapshot ds) {
       Map<String, dynamic> data = ds.data() as Map<String, dynamic>;
-      if (data['currentUsingSeat'] == '') {
+      if (data['currentUsingRoom'] == '') {
         _showDialogPossible(context);
       }
     });
@@ -191,9 +193,9 @@ class _SeatState extends State<Seat> {
                 onPressed: () {
                   setState(() {
                     widget.state = 0;
-                    widget.id = "";
-                    widget.startTime = "";
-                    widget.endTime = "";
+                    widget.startTime = '';
+                    widget.endTime = '';
+                    widget.id = '';
                     updateSeat(0, "", "", "", 1);
                     _showToast('사용 종료 되었습니다');
                   });
@@ -216,9 +218,9 @@ class _SeatState extends State<Seat> {
 
   Future<void> updateSeat(int _state, String _id, String _startTime,
       String _endTime, int mode) async {
-    return await fseats
-        .doc(widget.room)
-        .collection('seats')
+    return await rooms
+        .doc(widget.building)
+        .collection(widget.room!)
         .doc('seat${widget.seatNumber}')
         .update({
       'state': _state,
@@ -229,45 +231,15 @@ class _SeatState extends State<Seat> {
       updateUser(mode);
       await FirebaseFirestore.instance
           .collection('rooms')
-          .doc(widget.room)
+          .doc(widget.building)
+          .collection(widget.room!)
+          .doc('information')
           .get()
-          .then((DocumentSnapshot ds) async {
+          .then((ds) async {
         var v = ds.data() as Map<String, dynamic>;
         updateReserved(mode, v['reserved']);
-        await users
-            .doc(widget.name)
-            .collection('history')
-            .doc('information')
-            .get()
-            .then((value) async {
-          int userHistoryCount = value['count'];
-          if (mode == 0) {
-            userHistoryCount++;
-          }
-          String temp = Timestamp.now().toDate().toString();
-          updateUserHistory(
-            mode,
-            userHistoryCount,
-            _startTime,
-            temp.substring(0, temp.indexOf('.')),
-          );
-          await fseats
-              .doc(widget.room)
-              .collection('history')
-              .doc(_startTime.substring(0, 7))
-              .collection(_startTime.substring(0, 10))
-              .doc('information')
-              .get()
-              .then((value) {
-            int roomHistoryCount = value['count'];
-            if (mode == 0) {
-              roomHistoryCount++;
-            }
-            //updateRoomHistory(mode, roomHistoryCount, _startTime, temp.substring(0, temp.indexOf('.')));
-          });
-        });
-
-        // updateRoomHistory(mode);
+        String temp = Timestamp.now().toDate().toString();
+        //updateHistory(mode, _startTime, temp.substring(0, temp.indexOf('.')));
       });
     });
   }
@@ -276,11 +248,15 @@ class _SeatState extends State<Seat> {
     if (mode == 0) {
       // 사용
       return await users.doc(widget.name).update({
-        'currentUsingSeat': 'it4-108-${widget.seatNumber}',
+        'currentUsingBuilding': widget.building,
+        'currentUsingRoom': widget.room,
+        'currentUsingSeat': widget.seatNumber,
       });
     } else {
       // 사용 취소
       return await users.doc(widget.name).update({
+        'currentUsingBuilding': '',
+        'currentUsingRoom': '',
         'currentUsingSeat': '',
       });
     }
@@ -291,7 +267,9 @@ class _SeatState extends State<Seat> {
       // 사용
       return await FirebaseFirestore.instance
           .collection('rooms')
-          .doc(widget.room)
+          .doc(widget.building)
+          .collection(widget.room!)
+          .doc('information')
           .update({
         'reserved': reserved + 1,
       });
@@ -299,54 +277,70 @@ class _SeatState extends State<Seat> {
       // 사용 취소
       return await FirebaseFirestore.instance
           .collection('rooms')
-          .doc(widget.room)
+          .doc(widget.building)
+          .collection(widget.room!)
+          .doc('information')
           .update({
         'reserved': reserved - 1,
       });
     }
   }
 
-  Future<void> updateUserHistory(
-      int mode, int userHistoryCount, String startTime, String endTime) async {
+  Future<void> updateHistory(int mode, String startTime, String endTime) async {
+    int historyCount = 0;
+    int userHistoryCount = 0;
+    int roomHistoryCount = 0;
+    await history.doc('information').get().then((value) {
+      historyCount = value['historyCount'];
+    });
+    await users.doc(widget.name).get().then((value) {
+      userHistoryCount = value['userHistoryCount'];
+    });
+    await rooms.doc(widget.building).get().then((value) {
+      roomHistoryCount = value['roomHistoryCount'];
+    });
     if (mode == 0) {
-      // 사용
-      return await users
-          .doc(widget.name)
-          .collection('history')
-          .doc(userHistoryCount.toString())
-          .set({
-        'room': widget.room,
-        'seatNumber': widget.seatNumber,
-        'startTime': startTime,
+      historyCount++;
+      return await history.doc('information').update({
+        'historyCount': historyCount,
       }).then((value) async {
+        history.doc(historyCount.toString()).set({
+          'user': widget.name,
+          'building': widget.building,
+          'room': widget.room,
+          'seatNumber': widget.seatNumber,
+          'startTime': startTime,
+          'endTime': '',
+        });
+        userHistoryCount++;
+        await users.doc(widget.name).update({
+          'userHistoryCount': userHistoryCount,
+        });
         await users
             .doc(widget.name)
-            .collection('history')
-            .doc('information')
-            .update({
-          'count': userHistoryCount,
+            .collection('userHistory')
+            .doc(userHistoryCount.toString())
+            .set({
+          'historyCount': historyCount,
+        });
+        roomHistoryCount++;
+        await rooms.doc(widget.building).update({
+          'roomHistoryCount': roomHistoryCount,
+        });
+        await rooms
+            .doc(widget.building)
+            .collection('roomHistory')
+            .doc(roomHistoryCount.toString())
+            .set({
+          'historyCount': historyCount,
         });
       });
     } else {
-      // 사용 취소
-      return await users
-          .doc(widget.name)
-          .collection('history')
-          .doc(userHistoryCount.toString())
-          .update({
+      return await history.doc(historyCount.toString()).update({
         'endTime': endTime,
       });
     }
   }
-
-  // Future<void> updateRoomHistory(int mode, int roomHistoryCount, String startTime, String endTime) async{
-  //   if ( mode == 0 ){ // 사용
-  //     return await fseats.doc(widget.room).collection('history').doc()
-  //   }else{
-  //     // 사용 취소
-  //     return await
-  //   }
-  // }
 
   void _showToast(String _msg) {
     Fluttertoast.showToast(

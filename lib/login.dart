@@ -13,7 +13,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   String _id = '';
   String _password = '';
-  final _usernameController = TextEditingController();
+  final _idnameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isAllWritten = false;
   bool _isIdWritten = false;
@@ -58,7 +58,7 @@ class _LoginState extends State<Login> {
                 height: 30.0,
               ),
               TextField(
-                controller: _usernameController,
+                controller: _idnameController,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
